@@ -181,7 +181,9 @@ func startProcess(id, body string, dest chan<- *Message, opt *Options) *process 
 		}
 	}()
 	var err error
-	if path, args := shebang(body); path != "" {
+	path, args := shebang(body)
+	body = removeShebang(body)
+	if path != "" {
 		if RunScripts {
 			err = p.startProcess(path, args, body)
 		} else {
@@ -328,6 +330,21 @@ func shebang(body string) (path string, args []string) {
 	}
 	fs := strings.Fields(body[2:])
 	return fs[0], fs
+}
+
+// removeShebang looks for a shebang ('#!') at the beginning of the passed string.
+// If found, it returns a new version of the body without the shebang string.
+func removeShebang(body string) string {
+	body = strings.TrimSpace(body)
+	if !strings.HasPrefix(body, "#!") {
+		return body
+	}
+
+	if i := strings.Index(body, "\n"); i >= 0 {
+		body = body[i:]
+	}
+
+	return body
 }
 
 // startProcess starts a given program given its path and passing the given body
